@@ -290,6 +290,10 @@ function app_header_brand_context(PDO $pdo, string $fallbackTitle = 'A.P.I Nailu
  */
 function app_skip_deferred_schema_migrations(PDO $pdo): bool
 {
+    if (function_exists('pondok_db_supports_mysql_ddl') && !pondok_db_supports_mysql_ddl()) {
+        return true;
+    }
+
     if (
         !table_exists($pdo, 'santri')
         || !column_exists($pdo, 'santri', 'status_santri')
@@ -316,6 +320,12 @@ function app_ensure_schema_deferred(PDO $pdo): void
         return;
     }
     if (!empty($_SESSION['app_schema_ready_v1'])) {
+        return;
+    }
+
+    if (function_exists('pondok_db_supports_mysql_ddl') && !pondok_db_supports_mysql_ddl()) {
+        $_SESSION['app_schema_ready_v1'] = 1;
+
         return;
     }
 

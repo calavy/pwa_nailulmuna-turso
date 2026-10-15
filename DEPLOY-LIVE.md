@@ -11,6 +11,8 @@ Panduan ini untuk memperbarui **kode PHP** dari GitHub ke hosting (mis. `pwa.nai
 
 Di PC: **jangan timpa** `database.local.php` lokal saat mengedit profil hosting — kredensial hosting hanya di `database.local.hosting.php` (gitignored). Password hosting ada di file itu; isi juga **MySQL Host Name** dari panel (mis. `sql313.infinityfree.com`).
 
+**Keamanan:** `config/database.php` di GitHub **tidak** lagi menyimpan password produksi — wajib `database.local.php` di server atau env `DB_*`. Lihat [docs/PRODUCTION-ENV.md](docs/PRODUCTION-ENV.md).
+
 Alternatif tanpa salin file di server: set env `PONDOK_DB_PROFILE=hosting` agar [`config/database.php`](config/database.php) memuat `database.local.hosting.php`.
 
 Template hosting: `config/database.local.hosting.example.php` → salin jadi `database.local.hosting.php`.

@@ -1,16 +1,24 @@
-# Deploy kode PHP ke hosting produksi via SFTP (allowlist). Database & uploads TIDAK disentuh.
+# Deploy kode PHP ke hosting produksi via SFTP/rsync. Database & uploads TIDAK disentuh.
 # Secrets: SFTP_HOST, SFTP_PORT, SFTP_USER, SFTP_PRIVATE_KEY, SFTP_KNOWN_HOSTS, SFTP_REMOTE_ROOT
 # Environment GitHub: production (disarankan required reviewers).
 
-name: Deploy Production (SFTP allowlist)
+name: Deploy Production (SFTP)
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: Ketik "deploy" untuk melanjutkan upload SFTP
+        description: Ketik "deploy" untuk melanjutkan upload
         required: true
         type: string
+      deploy_mode:
+        description: allowlist = file terbatas; full = seluruh proyek (exclude uploads & config lokal)
+        required: true
+        type: choice
+        options:
+          - allowlist
+          - full
+        default: full
   push:
     tags:
       - 'release-*'
@@ -38,14 +46,26 @@ jobs:
           php-version: '8.2'
           coverage: none
 
-      - name: PHP syntax (allowlist)
+      - name: PHP syntax (changed PHP files on full, allowlist on partial)
         run: |
           set -e
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            echo "php -l $f"
-            php -l "$f"
-          done <<< "${{ env.DEPLOY_FILES }}"
+          MODE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode || 'full' }}"
+          if [ "$MODE" = "allowlist" ] || [ "${{ github.event_name }}" = "push" ]; then
+            FILES="${{ env.DEPLOY_FILES }}"
+            if [ "${{ github.event_name }}" = "push" ]; then
+              FILES="${{ env.DEPLOY_FILES }}"
+            fi
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              php -l "$f"
+            done <<< "$FILES"
+          else
+            find . -name '*.php' \
+              ! -path './vendor/*' \
+              ! -path './.git/*' \
+              ! -path './storage/*' \
+              -print0 | xargs -0 -n1 php -l
+          fi
 
   deploy:
     needs: lint
@@ -57,7 +77,17 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364af9eda6 # v4.2.2
 
-      - name: Prepare upload bundle (allowlist only)
+      - name: Install SSH key
+        run: |
+          set -e
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SFTP_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SFTP_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Prepare bundle (allowlist)
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode == 'allowlist')
         run: |
           set -e
           mkdir -p _deploy_bundle
@@ -72,16 +102,8 @@ jobs:
           done <<< "${{ env.DEPLOY_FILES }}"
           find _deploy_bundle -type f
 
-      - name: Install SSH key
-        run: |
-          set -e
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.SFTP_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "${{ secrets.SFTP_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-
-      - name: SFTP upload (no remote delete)
+      - name: SFTP upload (allowlist)
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode == 'allowlist')
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -101,9 +123,36 @@ jobs:
           EOF
           done <<< "${{ env.DEPLOY_FILES }}"
 
+      - name: Rsync full tree (SSH)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode == 'full'
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_REMOTE_ROOT: ${{ secrets.SFTP_REMOTE_ROOT }}
+        run: |
+          set -e
+          PORT="${SFTP_PORT:-22}"
+          REMOTE="${SFTP_REMOTE_ROOT%/}"
+          RSYNC_RSH="ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -p ${PORT} -i $HOME/.ssh/deploy_key"
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'uploads/' \
+            --exclude 'storage/' \
+            --exclude 'vendor/' \
+            --exclude 'config/database.local.php' \
+            --exclude 'config/database.local.hosting.php' \
+            --exclude 'config/database.turso.local.php' \
+            --exclude 'config/app.local.php' \
+            --exclude 'config/firebase.local.php' \
+            --exclude 'config/midtrans.local.php' \
+            --exclude 'config/google_service_account.json' \
+            --exclude '.env' \
+            ./ "${SFTP_USER}@${SFTP_HOST}:${REMOTE}/"
+
       - name: Deploy summary
         run: |
           echo "Commit: ${{ github.sha }}"
-          echo "Files uploaded (allowlist):"
-          echo "${{ env.DEPLOY_FILES }}"
-          echo "Post-deploy: verifikasi read-only rekap kas di produksi; invalidasi cache sesi admin jika perlu."
+          echo "Mode: ${{ github.event_name == 'push' && 'allowlist (tag)' || github.event.inputs.deploy_mode }}"
+          echo "Docs: docs/PRODUCTION-ENV.md, docs/PWA-PRODUCTION-CHECKLIST.md"

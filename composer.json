@@ -1,0 +1,14 @@
+{
+    "name": "pondok/pwa-nailulmuna",
+    "description": "Portal digital pondok — PHP PWA",
+    "type": "project",
+    "require": {
+        "php": ">=8.2"
+    },
+    "suggest": {
+        "turso/libsql-php": "Koneksi remote Turso (opsional; staging bisa pakai sqlite_path)"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

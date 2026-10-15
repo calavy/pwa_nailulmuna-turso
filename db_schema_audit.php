@@ -1,5 +1,8 @@
 <?php
 
+require_once __DIR__ . '/helpers/dev_endpoint_guard.php';
+pondok_dev_endpoint_guard();
+
 require_once __DIR__ . '/config/database.php';
 
 /** @param list<string> $columns */
@@ -54,7 +57,7 @@ foreach ($required as $table => $columns) {
     $auditRows[] = $row;
 }
 
-$dbName = (string) ($pdo->query('SELECT DATABASE()')->fetchColumn() ?: '-');
+$dbName = pondok_database_name($pdo);
 $allGood = $missingTables === 0 && $missingColumns === 0;
 ?>
 <!doctype html>

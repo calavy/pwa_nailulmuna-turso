@@ -40,7 +40,8 @@ git push origin main
 
 ## Hosting online (live server)
 
-**Panduan lengkap & aman (tanpa hapus data):** baca **[DEPLOY-LIVE.md](DEPLOY-LIVE.md)**
+**Panduan lengkap & aman (tanpa hapus data):** baca **[DEPLOY-LIVE.md](DEPLOY-LIVE.md)**  
+**Env produksi & Turso:** [docs/PRODUCTION-ENV.md](docs/PRODUCTION-ENV.md) · **Checklist PWA live:** [docs/PWA-PRODUCTION-CHECKLIST.md](docs/PWA-PRODUCTION-CHECKLIST.md)
 
 Ringkas:
 

@@ -2,17 +2,19 @@
 
 /**
  * Lokal (XAMPP): config/database.local.php → pwa_nailulmuna / root / pass kosong.
- * Hosting: config/database.local.hosting.php → u700125577_pwanailulmuna (salin ke
- * database.local.php di server, atau set env PONDOK_DB_PROFILE=hosting).
+ * Hosting: config/database.local.hosting.php → salin ke database.local.php di server,
+ * atau set env PONDOK_DB_PROFILE=hosting.
+ * Turso (staging): env PONDOK_DB_DRIVER=turso + config/database.turso.local.php
  *
- * Prioritas: getenv DB_* → database.local.php (lokal XAMPP) → default di bawah.
+ * Prioritas MySQL: getenv DB_* → database.local.php → default lokal di bawah (tanpa password produksi).
  */
-/** Default fallback — hosting; lokal XAMPP pakai config/database.local.php */
+require_once __DIR__ . '/../helpers/pondok_db.php';
+
 $host = '127.0.0.1';
 $port = '3306';
-$dbName = 'u700125577_pwanailulmuna';
-$dbUser = 'u700125577_pwanailulmuna';
-$dbPass = 'Pwanailulmuna@1990';
+$dbName = 'pwa_nailulmuna';
+$dbUser = 'root';
+$dbPass = '';
 
 $envHost = getenv('DB_HOST');
 if ($envHost !== false && trim((string) $envHost) !== '') {
@@ -42,7 +44,7 @@ if ($dbProfile === 'hosting' && is_file($hostingFile)) {
     $localFile = $hostingFile;
 }
 $GLOBALS['pondok_env'] = 'production';
-if (is_file($localFile)) {
+if (pondok_db_driver() === 'mysql' && is_file($localFile)) {
     $local = require $localFile;
     if (is_array($local)) {
         if (!empty($local['environment'])) {
@@ -68,26 +70,18 @@ if (is_file($localFile)) {
     }
 }
 
-$pondokPdoOptions = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-];
-
 try {
-    $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4";
-    $pdo = new PDO($dsn, $dbUser, $dbPass, $pondokPdoOptions);
-    $GLOBALS['pondok_pdo'] = $pdo;
-    $GLOBALS['pondok_pdo_dsn_config'] = [
-        'dsn' => $dsn,
+    $connected = pondok_db_connect([
+        'host' => $host,
+        'port' => $port,
+        'dbname' => $dbName,
         'user' => $dbUser,
         'pass' => $dbPass,
-        'options' => $pondokPdoOptions,
-    ];
-    try {
-        $pdo->exec("SET time_zone = '+07:00'");
-    } catch (PDOException $e) {
-    }
-} catch (PDOException $exception) {
+    ]);
+    $pdo = $connected['pdo'];
+    $GLOBALS['pondok_pdo'] = $pdo;
+    $GLOBALS['pondok_pdo_dsn_config'] = $connected['dsn_config'];
+} catch (Throwable $exception) {
     die('Koneksi database gagal: ' . $exception->getMessage());
 }
 
@@ -108,6 +102,9 @@ function pondok_pdo(): PDO
 /** Koneksi putus (timeout / MySQL restart) — umum saat sinkron presensi panjang. */
 function pondok_pdo_is_gone_away(Throwable $e): bool
 {
+    if (pondok_db_driver() !== 'mysql') {
+        return false;
+    }
     $msg = strtolower($e->getMessage());
 
     return str_contains($msg, 'server has gone away')
@@ -122,15 +119,45 @@ function pondok_pdo_reconnect(): PDO
     if (!is_array($cfg)) {
         throw new RuntimeException('Konfigurasi PDO tidak tersedia untuk reconnect.');
     }
-    $pdo = new PDO((string) $cfg['dsn'], (string) $cfg['user'], (string) $cfg['pass'], (array) ($cfg['options'] ?? []));
+    $driver = (string) ($cfg['driver'] ?? 'mysql');
+    if ($driver === 'turso') {
+        $connected = pondok_db_connect_turso((array) ($cfg['options'] ?? []));
+    } else {
+        $mysql = is_array($cfg['mysql'] ?? null) ? $cfg['mysql'] : [];
+        $connected = pondok_db_connect([
+            'host' => (string) ($mysql['host'] ?? parse_mysql_host_from_dsn((string) ($cfg['dsn'] ?? ''))),
+            'port' => (string) ($mysql['port'] ?? '3306'),
+            'dbname' => (string) ($mysql['dbname'] ?? parse_mysql_db_from_dsn((string) ($cfg['dsn'] ?? ''))),
+            'user' => (string) ($mysql['user'] ?? $cfg['user'] ?? ''),
+            'pass' => (string) ($mysql['pass'] ?? $cfg['pass'] ?? ''),
+        ]);
+    }
+    $pdo = $connected['pdo'];
     $GLOBALS['pondok_pdo'] = $pdo;
+    $GLOBALS['pondok_pdo_dsn_config'] = $connected['dsn_config'];
 
     return $pdo;
 }
 
+function parse_mysql_host_from_dsn(string $dsn): string
+{
+    if (preg_match('/host=([^;]+)/', $dsn, $m)) {
+        return $m[1];
+    }
+
+    return '127.0.0.1';
+}
+
+function parse_mysql_db_from_dsn(string $dsn): string
+{
+    if (preg_match('/dbname=([^;]+)/', $dsn, $m)) {
+        return $m[1];
+    }
+
+    return 'pwa_nailulmuna';
+}
+
 /**
- * Jalankan callback dengan PDO aktif; reconnect sekali jika "gone away".
- *
  * @template T
  * @param callable(PDO): T $callback
  * @return T
@@ -149,7 +176,6 @@ function pondok_pdo_run_with_retry(callable $callback, ?PDO $pdo = null): mixed
     }
 }
 
-/** Ping SELECT 1; reconnect otomatis jika koneksi mati. */
 function pondok_pdo_ping(?PDO $pdo = null): PDO
 {
     $pdo = $pdo ?? pondok_pdo();
@@ -166,84 +192,15 @@ function pondok_pdo_ping(?PDO $pdo = null): PDO
     return $pdo;
 }
 
-// Samakan jadwal/presensi/tanggal PHP dengan operasional pondok (cron WA memakai Asia/Jakarta).
 if (function_exists('date_default_timezone_set')) {
     date_default_timezone_set('Asia/Jakarta');
 }
 
-/** Daftar tabel DB — di-cache per request agar navigasi tidak memicu ratusan SHOW TABLES. */
-function pondok_schema_tables(PDO $pdo): array
-{
-    static $cacheByPdo = [];
-    $pdoKey = spl_object_id($pdo);
-    if (isset($cacheByPdo[$pdoKey])) {
-        return $cacheByPdo[$pdoKey];
-    }
-    $map = [];
-    try {
-        $rows = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_NUM) ?: [];
-        foreach ($rows as $row) {
-            $name = strtolower((string) ($row[0] ?? ''));
-            if ($name !== '') {
-                $map[$name] = true;
-            }
-        }
-    } catch (PDOException $e) {
-        $map = [];
-    }
-    $cacheByPdo[$pdoKey] = $map;
-
-    return $map;
-}
-
-function table_exists(PDO $pdo, string $tableName): bool
-{
-    $tables = pondok_schema_tables($pdo);
-
-    return isset($tables[strtolower($tableName)]);
-}
-
-/** Kolom per tabel — di-cache per request. */
-function pondok_schema_columns(PDO $pdo, string $tableName): array
-{
-    static $cacheByPdoTable = [];
-    $tableKey = strtolower($tableName);
-    $pdoKey = spl_object_id($pdo) . ':' . $tableKey;
-    if (isset($cacheByPdoTable[$pdoKey])) {
-        return $cacheByPdoTable[$pdoKey];
-    }
-    $map = [];
-    if (!table_exists($pdo, $tableName)) {
-        $cacheByPdoTable[$pdoKey] = $map;
-
-        return $map;
-    }
-    try {
-        $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $tableName) ?? $tableName;
-        $rows = $pdo->query('SHOW COLUMNS FROM `' . $safeTable . '`')->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($rows as $row) {
-            $col = strtolower((string) ($row['Field'] ?? ''));
-            if ($col !== '') {
-                $map[$col] = true;
-            }
-        }
-    } catch (PDOException $e) {
-        $map = [];
-    }
-    $cacheByPdoTable[$pdoKey] = $map;
-
-    return $map;
-}
-
-function column_exists(PDO $pdo, string $tableName, string $columnName): bool
-{
-    $columns = pondok_schema_columns($pdo, $tableName);
-
-    return isset($columns[strtolower($columnName)]);
-}
-
 function ensure_santri_compat_schema(PDO $pdo): void
 {
+    if (!pondok_db_supports_mysql_ddl()) {
+        return;
+    }
     if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['pondok_santri_compat_v1'])) {
         return;
     }
@@ -252,7 +209,9 @@ function ensure_santri_compat_schema(PDO $pdo): void
         return;
     }
     if (!table_exists($pdo, 'santri')) {
-        $_SESSION['pondok_santri_compat_v1'] = 1;
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['pondok_santri_compat_v1'] = 1;
+        }
 
         return;
     }
@@ -304,8 +263,6 @@ function ensure_santri_compat_schema(PDO $pdo): void
         $doneCli = true;
     }
 }
-
-// Skema & helper berat: jangan di sini — dipanggil sekali per sesi via app_ensure_schema_deferred() (includes/header).
 
 if (PHP_SAPI !== 'cli') {
     require_once dirname(__DIR__) . '/helpers/app_path.php';
