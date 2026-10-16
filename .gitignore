@@ -1,6 +1,7 @@
 config/database.local.php
 config/database.local.hosting.php
 config/database.turso.local.php
+config/turso.remote.env
 config/app.local.php
 config/firebase.local.php
 config/midtrans.local.php

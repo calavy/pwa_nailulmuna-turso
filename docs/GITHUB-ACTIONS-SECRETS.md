@@ -22,7 +22,7 @@ Repo: **https://github.com/calavy/pwa_nailulmuna-turso**
 
 | Secret | Keterangan |
 |--------|------------|
-| `TURSO_DATABASE_URL` | URL libsql database Turso (`pwanailulmuna`, region Tokyo) — dipakai job **turso_remote_smoke** |
+| `TURSO_DATABASE_URL` | Contoh: `libsql://pwanailulmuna-developernme.aws-ap-northeast-1.turso.io` (salin persis dari Turso dashboard) — job **turso_remote_smoke** |
 | `TURSO_AUTH_TOKEN` | Token API Turso — **jangan** commit ke repo atau tampilkan di log Actions |
 
 Workflow [`ci-php.yml`](../.github/workflows/ci-php.yml) menjalankan `scripts/ci_turso_validate.php` (hanya `SELECT` read-only). Nilai secret tidak dicetak.
