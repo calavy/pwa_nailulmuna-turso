@@ -42,9 +42,22 @@ jobs:
       - name: Remote read-only sanity (no schema/data migration in CI)
         env:
           PONDOK_DB_DRIVER: turso
+          PONDOK_TURSO_REQUIRE_SYNC: '1'
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: php scripts/ci_turso_validate.php
+        run: |
+          mkdir -p storage
+          php scripts/ci_turso_validate.php
+
+      - name: Pre-cutover checklist (schema readiness — manual only)
+        env:
+          PONDOK_DB_DRIVER: turso
+          PONDOK_TURSO_REQUIRE_SYNC: '1'
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          mkdir -p storage
+          php scripts/turso_precutover_checklist.php
 
       - name: Migration note
         run: |

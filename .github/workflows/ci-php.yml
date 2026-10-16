@@ -79,13 +79,9 @@ jobs:
       - name: Turso remote read-only smoke
         env:
           PONDOK_DB_DRIVER: turso
+          PONDOK_TURSO_REQUIRE_SYNC: '1'
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: php scripts/ci_turso_validate.php
-
-      - name: Pre-cutover checklist (after remote connect)
-        env:
-          PONDOK_DB_DRIVER: turso
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: php scripts/turso_precutover_checklist.php
+        run: |
+          mkdir -p storage
+          php scripts/ci_turso_validate.php

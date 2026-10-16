@@ -47,6 +47,11 @@ function pondok_turso_open_pdo(array $cfg, array $pdoOptions): PDO
             try {
                 $database->sync();
             } catch (Throwable $e) {
+                $requireSync = getenv('PONDOK_TURSO_REQUIRE_SYNC') === '1'
+                    || strtolower(trim((string) (getenv('GITHUB_ACTIONS') ?: ''))) === 'true';
+                if ($requireSync) {
+                    throw new RuntimeException('Turso remote sync failed');
+                }
                 error_log('[pondok_turso] sync warning: ' . $e->getMessage());
             }
         }

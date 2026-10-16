@@ -47,14 +47,19 @@ if (!class_exists(\Libsql\Database::class)) {
 }
 tv_ok('composer autoload + turso/libsql');
 
+$pdo = null;
 try {
-    require_once dirname(__DIR__) . '/config/database.php';
+    $connected = pondok_db_connect_turso([
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    $pdo = $connected['pdo'];
 } catch (Throwable $e) {
     tv_fail('database connection failed');
     exit(1);
 }
 
-if (!isset($pdo) || !$pdo instanceof PDO) {
+if (!$pdo instanceof PDO) {
     tv_fail('PDO not available after bootstrap');
     exit(1);
 }
