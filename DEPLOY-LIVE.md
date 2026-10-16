@@ -83,8 +83,8 @@ Jangan timpa `config/database.local.php`.
 
 ### Opsi B: Upload manual (FTP / File Manager)
 
-1. Download ZIP dari GitHub: https://github.com/calavy/pwa_nailulmuna → Code → Download ZIP  
-   Atau upload folder hasil `git pull` lokal.
+1. Download ZIP dari GitHub: https://github.com/calavy/pwa_nailulmuna-turso → Code → Download ZIP  
+   *(Proyek MySQL lama: `calavy/pwa_nailulmuna`.)* Atau upload folder hasil `git pull` lokal.
 2. Extract ke folder situs (root subdomain).
 3. **Jangan replace** file ini jika sudah ada dan benar:
    - `config/database.local.php`

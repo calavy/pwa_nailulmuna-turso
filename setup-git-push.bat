@@ -1,11 +1,12 @@
 @echo off
-title Setup Git — siap push GitHub
+title Setup Git — pwa_nailulmuna-turso
 cd /d "%~dp0"
 set "PATH=C:\Program Files\Git\bin;%PATH%"
 
 echo.
-echo === Setup Git (hanya repo ini) ===
-echo Repo : https://github.com/calavy/pwa_nailulmuna
+echo === Setup Git (hanya repo ini — varian Turso) ===
+echo Repo : https://github.com/calavy/pwa_nailulmuna-turso
+echo Proyek MySQL terpisah: C:\xampp\htdocs\pwa_nailulmuna -^> calavy/pwa_nailulmuna
 echo.
 
 git config user.name "calavy"
@@ -21,7 +22,7 @@ git remote -v
 echo.
 
 echo File sensitif (TIDAK ikut push):
-git check-ignore -v config/database.local.php config/app.local.php 2>nul
+git check-ignore -v config/database.local.php config/app.local.php config/database.turso.local.php 2>nul
 echo.
 
 echo Perubahan belum di-commit:
@@ -33,6 +34,6 @@ echo.
 echo Langkah berikutnya:
 echo   1. Double-click  upload-github.bat
 echo   2. Ketik pesan commit
-echo   3. Login GitHub jika diminta (browser / token)
+echo   3. Login GitHub jika diminta ^(PAT akun calavy^)
 echo.
 pause

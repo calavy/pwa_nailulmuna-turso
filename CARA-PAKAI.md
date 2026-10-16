@@ -19,15 +19,22 @@ Path URL **otomatis** menyesuaikan folder XAMPP — tidak perlu ubah kode saat p
 
 ## Upload ke GitHub
 
+**Repo varian Turso (folder ini):** https://github.com/calavy/pwa_nailulmuna-turso  
+*(Bukan `calavy/pwa_nailulmuna` — itu proyek MySQL di folder `C:\xampp\htdocs\pwa_nailulmuna`.)*
+
+**Pertama kali:** jika repo belum ada di GitHub, jalankan **`buat-repo-pwa-nailulmuna-turso.bat`**.
+
 1. Edit & tes di lokal sampai OK
-2. Double-click **`upload-github.bat`**
+2. Double-click **`upload-github.bat`** (atau **`push-lancar.bat`**)
 3. Ketik pesan commit (contoh: `Perbaikan riwayat pembayaran`)
-4. Selesai — cek: https://github.com/calavy/pwa_nailulmuna
+4. Selesai — cek: https://github.com/calavy/pwa_nailulmuna-turso
+
+Login GitHub: akun **calavy** + **PAT** (scope `repo`). Jika push gagal: **`fix-github-login.bat`**.
 
 Atau manual di PowerShell:
 
 ```powershell
-cd C:\xampp\htdocs\pwa_nailulmuna
+cd "C:\xampp\htdocs\pwa_nailulmuna - turso"
 git add .
 git commit -m "Pesan perubahan Anda"
 git pull origin main

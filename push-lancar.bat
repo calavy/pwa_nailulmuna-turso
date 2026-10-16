@@ -1,17 +1,17 @@
 @echo off
-title Push GitHub — pwa_nailulmuna
+title Push GitHub — pwa_nailulmuna-turso
 cd /d "%~dp0"
 set "PATH=C:\Program Files\Git\bin;C:\Program Files\Git\cmd;%PATH%"
 
 echo.
 echo === Push GitHub (semua langkah otomatis) ===
 echo Folder: %CD%
-echo Repo  : https://github.com/calavy/pwa_nailulmuna
+echo Repo  : https://github.com/calavy/pwa_nailulmuna-turso
 echo.
 
 if not exist ".git" (
     echo [ERROR] Bukan folder git. Jalankan file ini dari:
-    echo   C:\xampp\htdocs\pwa_nailulmuna
+    echo   C:\xampp\htdocs\pwa_nailulmuna - turso
     pause
     exit /b 1
 )
@@ -28,7 +28,7 @@ git status -sb
 echo.
 
 set /p MSG="Pesan commit (Enter = default): "
-if "%MSG%"=="" set MSG=Impor DB lokal, riwayat hapus perbaikan kas, PKPPS, dan skrip Git.
+if "%MSG%"=="" set MSG=Update varian Turso
 
 git add .
 git status -sb
@@ -54,12 +54,13 @@ git push origin main
 if errorlevel 1 (
     echo.
     echo [ERROR] Push gagal.
-    echo - Pastikan sudah login GitHub ^(browser / Personal Access Token^)
-    echo - Buat token: GitHub - Settings - Developer settings - Personal access tokens
+    echo - Pastikan repo: https://github.com/calavy/pwa_nailulmuna-turso
+    echo - Belum ada? Jalankan buat-repo-pwa-nailulmuna-turso.bat
+    echo - Login: PAT akun calavy
     pause
     exit /b 1
 )
 
 echo.
-echo BERHASIL ^^! Cek: https://github.com/calavy/pwa_nailulmuna
+echo BERHASIL ^^! Cek: https://github.com/calavy/pwa_nailulmuna-turso
 pause

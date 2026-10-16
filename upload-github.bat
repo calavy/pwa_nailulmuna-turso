@@ -1,11 +1,12 @@
 @echo off
-title Upload ke GitHub - pwa_nailulmuna
+title Upload ke GitHub - pwa_nailulmuna-turso
 cd /d "%~dp0"
 set "PATH=C:\Program Files\Git\bin;%PATH%"
 
 echo.
-echo === Upload ke GitHub ===
-echo Repo: https://github.com/calavy/pwa_nailulmuna
+echo === Upload ke GitHub (varian Turso) ===
+echo Repo: https://github.com/calavy/pwa_nailulmuna-turso
+echo Bukan calavy/pwa_nailulmuna — itu proyek MySQL di folder pwa_nailulmuna.
 echo.
 
 for /f "delims=" %%A in ('git config user.email 2^>nul') do set GIT_EMAIL=%%A
@@ -47,11 +48,12 @@ echo.
 echo Mengirim ke GitHub...
 git push origin main
 if errorlevel 1 (
-    echo Push gagal. Periksa login GitHub.
+    echo Push gagal. Pastikan repo ada dan login GitHub akun calavy ^(PAT^).
+    echo Belum punya repo? Jalankan: buat-repo-pwa-nailulmuna-turso.bat
     pause
     exit /b 1
 )
 
 echo.
-echo BERHASIL. Cek: https://github.com/calavy/pwa_nailulmuna
+echo BERHASIL. Cek: https://github.com/calavy/pwa_nailulmuna-turso
 pause
