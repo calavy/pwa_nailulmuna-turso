@@ -4,6 +4,19 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/hijri_kalender.php';
 
+/** Runtime CREATE TABLE ala-MySQL — lewati jika staging SQLite sudah punya tabel dari migrasi. */
+function akademik_mysql_runtime_ddl_allowed(PDO $pdo, string $table): bool
+{
+    if (table_exists($pdo, $table)) {
+        return false;
+    }
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)) {
+        return false;
+    }
+
+    return true;
+}
+
 function akademik_add_column(PDO $pdo, string $table, string $col, string $ddl): void
 {
     if (!table_exists($pdo, $table) || column_exists($pdo, $table, $col)) {
@@ -21,6 +34,9 @@ function akademik_add_column(PDO $pdo, string $table, string $col, string $ddl):
 
 function ensure_akademik_bait_kitab_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_bait_kitab')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_bait_kitab (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,6 +54,9 @@ function ensure_akademik_bait_kitab_table(PDO $pdo): void
 
 function ensure_akademik_libur_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_libur')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_libur (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -58,6 +77,9 @@ function ensure_akademik_libur_table(PDO $pdo): void
 /** Libur tetap per hari dalam seminggu (1=Senin … 7=Minggu, sama dengan date N). */
 function ensure_akademik_libur_mingguan_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_libur_mingguan')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_libur_mingguan (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -197,6 +219,9 @@ function akademik_hijri_hbt_ringkas(PDO $pdo, string $tanggalMasehi, array $hijr
  */
 function ensure_akademik_kalender_hari_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_kalender_hari')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_kalender_hari (
             tanggal_masehi DATE NOT NULL PRIMARY KEY,
@@ -216,6 +241,9 @@ function ensure_akademik_kalender_hari_table(PDO $pdo): void
  */
 function ensure_akademik_hijri_awal_bulan_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_hijri_awal_bulan')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_hijri_awal_bulan (
             tahun_hijriyah SMALLINT UNSIGNED NOT NULL,
@@ -501,6 +529,9 @@ function akademik_hitung_target_bait_per_hari(int $jumlahBaris, int $estimasiHar
 
 function ensure_akademik_hafalan_setoran_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_hafalan_setoran')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_hafalan_setoran (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -526,6 +557,9 @@ function ensure_akademik_hafalan_setoran_table(PDO $pdo): void
 
 function ensure_akademik_rapor_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_rapor')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_rapor (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -893,6 +927,9 @@ function alumni_distinct_alamat(PDO $pdo, string $column): array
 
 function ensure_akademik_alumni_table(PDO $pdo): void
 {
+    if (!akademik_mysql_runtime_ddl_allowed($pdo, 'akademik_alumni')) {
+        return;
+    }
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS akademik_alumni (
             id INT AUTO_INCREMENT PRIMARY KEY,

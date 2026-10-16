@@ -1,0 +1,4 @@
+# Lokal: arahkan Apache ke staging SQLite (folder proyek turso saja).
+<IfModule mod_env.c>
+    SetEnv PONDOK_DB_DRIVER turso
+</IfModule>

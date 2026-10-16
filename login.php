@@ -180,7 +180,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once __DIR__ . '/helpers/cashless_koperasi.php';
             cashless_koperasi_users_ensure_schema($pdo);
 
-            $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin TINYINT(1) NOT NULL DEFAULT 0");
+            if (!column_exists($pdo, 'users', 'is_super_admin')) {
+                try {
+                    $colType = function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)
+                        ? 'INTEGER NOT NULL DEFAULT 0'
+                        : 'TINYINT(1) NOT NULL DEFAULT 0';
+                    $pdo->exec('ALTER TABLE users ADD COLUMN is_super_admin ' . $colType);
+                } catch (PDOException $e) {
+                    /* abaikan */
+                }
+            }
 
             $_SESSION['users_role_enum_v3'] = 1;
 

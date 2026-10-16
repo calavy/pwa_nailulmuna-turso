@@ -1,0 +1,7 @@
+=== ping === len=99
+getenv_PONDOK_DB_DRIVER=turso pondok_db_driver=turso pdo_driver=sqlite pondok_database_name=sqlite 
+=== login_get === len=11710
+ Portal Masuk (function () { var link = document.getElementById('pondok-fontawesome-css'); if (!link) { return; } var localHref = "/pwa_nailulmuna - turso/api/vendor/fontawesome.css.php"; var cdnHref = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"; function applyFa() { 
+=== scan_portal === len=18632
+ :root { --pwa-shell-bg: #f7f7f7; } Scan Presensi Pembimbing (function () { var link = document.getElementById('pondok-fontawesome-css'); if (!link) { return; } var localHref = "/pwa_nailulmuna - turso/api/vendor/fontawesome.css.php"; var cdnHref = "https://cdnjs.cloudflare.com/ajax/libs/font-awesom
+=== login_post === len=11710

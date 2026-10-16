@@ -28,6 +28,29 @@ function login_rate_limit_ensure_schema(PDO $pdo): void
     }
     $done = true;
 
+    if (function_exists('table_exists') && table_exists($pdo, 'login_attempt')) {
+        return;
+    }
+
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)) {
+        $pdo->exec('
+            CREATE TABLE IF NOT EXISTS login_attempt (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip TEXT NOT NULL,
+                username_norm TEXT NOT NULL DEFAULT \'\',
+                attempted_at TEXT NOT NULL
+            )
+        ');
+        try {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_login_attempt_ip_time ON login_attempt (ip, attempted_at)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_login_attempt_user_time ON login_attempt (username_norm, attempted_at)');
+        } catch (PDOException $e) {
+            /* indeks mungkin sudah ada dari migrasi */
+        }
+
+        return;
+    }
+
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS login_attempt (
             id INT AUTO_INCREMENT PRIMARY KEY,

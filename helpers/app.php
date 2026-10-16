@@ -1227,8 +1227,11 @@ function ensure_pondok_settings_defaults(PDO $pdo): void
     if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['pondok_settings_defaults_ok'])) {
         return;
     }
+    $insertIgnore = (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo))
+        ? 'INSERT OR IGNORE'
+        : 'INSERT IGNORE';
     $ins = $pdo->prepare('
-        INSERT IGNORE INTO app_settings (setting_key, setting_value)
+        ' . $insertIgnore . ' INTO app_settings (setting_key, setting_value)
         VALUES (:k, :v)
     ');
     foreach (pondok_settings_defaults() as $key => $value) {
@@ -1544,6 +1547,17 @@ function get_gregorian_range_from_hijri_month(int $hijriYear, int $hijriMonth): 
 function ensure_jadwal_kegiatan_tempat(PDO $pdo): void
 {
     if (!table_exists($pdo, 'jadwal_kegiatan')) {
+        return;
+    }
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)) {
+        if (!column_exists($pdo, 'jadwal_kegiatan', 'tempat')) {
+            try {
+                $pdo->exec('ALTER TABLE jadwal_kegiatan ADD COLUMN tempat TEXT NULL');
+            } catch (PDOException $e) {
+                /* abaikan */
+            }
+        }
+
         return;
     }
     try {

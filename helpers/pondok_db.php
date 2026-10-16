@@ -227,3 +227,16 @@ function column_exists(PDO $pdo, string $tableName, string $columnName): bool
 
     return isset($columns[strtolower($columnName)]);
 }
+
+/** Ekspresi CONCAT yang kompatibel MySQL / SQLite. */
+function pondok_sql_concat(PDO $pdo, string ...$sqlParts): string
+{
+    if ($sqlParts === []) {
+        return "''";
+    }
+    if (pondok_db_is_sqlite_family($pdo)) {
+        return implode(' || ', array_map(static fn (string $p): string => '(' . $p . ')', $sqlParts));
+    }
+
+    return 'CONCAT(' . implode(', ', $sqlParts) . ')';
+}

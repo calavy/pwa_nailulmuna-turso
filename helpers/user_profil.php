@@ -14,7 +14,13 @@ function user_profil_ensure_schema(PDO $pdo): void
     if (!table_exists($pdo, 'users')) {
         return;
     }
-    $pdo->exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS foto_profil VARCHAR(255) NULL DEFAULT NULL');
+    if (!column_exists($pdo, 'users', 'foto_profil')) {
+        try {
+            $pdo->exec('ALTER TABLE users ADD COLUMN foto_profil VARCHAR(255) NULL DEFAULT NULL');
+        } catch (PDOException $e) {
+            /* abaikan */
+        }
+    }
     if (!column_exists($pdo, 'users', 'jenis_kelamin')) {
         $pdo->exec("ALTER TABLE users ADD COLUMN jenis_kelamin ENUM('Laki-laki','Perempuan') NULL DEFAULT NULL");
     }

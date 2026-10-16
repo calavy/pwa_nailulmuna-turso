@@ -44,6 +44,21 @@ function pkpps_ensure_schema(PDO $pdo, bool $force = false): void
         && column_exists($pdo, 'pkpps_tingkatan', 'kelas_keuangan_id')
         && column_exists($pdo, 'pkpps_tingkatan', 'sub_level');
 
+    if ($pkppsSchemaComplete) {
+        if (!$force && app_setting($pdo, 'pkpps_schema_ready_v1', '') !== '1') {
+            save_setting($pdo, 'pkpps_schema_ready_v1', '1');
+        }
+        $_SESSION['pkpps_schema_ready_v1'] = 1;
+
+        return;
+    }
+
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo) && $tablesReady) {
+        $_SESSION['pkpps_schema_ready_v1'] = 1;
+
+        return;
+    }
+
     $pdo->exec('
         CREATE TABLE IF NOT EXISTS pkpps_tingkatan (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -106,15 +121,6 @@ function pkpps_ensure_schema(PDO $pdo, bool $force = false): void
             KEY idx_pkpps_jadwal_tingkatan (pkpps_tingkatan_id, hari_ke)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ');
-
-    if (!$force && $pkppsSchemaComplete) {
-        if (app_setting($pdo, 'pkpps_schema_ready_v1', '') !== '1') {
-            save_setting($pdo, 'pkpps_schema_ready_v1', '1');
-        }
-        $_SESSION['pkpps_schema_ready_v1'] = 1;
-
-        return;
-    }
 
     $count = (int) $pdo->query('SELECT COUNT(*) FROM pkpps_tingkatan')->fetchColumn();
     if ($count === 0) {
@@ -613,9 +619,10 @@ function pkpps_jadwal_slots_for_presensi_scan(PDO $pdo, string $tanggal, int $ha
     $kategoriFilterSql = $modeLiburAktif !== null
         ? akademik_libur_presensi_filter_sql_by_mode($modeLiburAktif, 'COALESCE(k.kategori_kegiatan, "TAALIM")')
         : '';
+    $tingkatanExpr = pondok_sql_concat($pdo, '"PKPPS: "', 't.nama_tingkatan');
     $st = $pdo->prepare('
         SELECT k.id AS kegiatan_id, k.nama_kegiatan, j.jam_mulai, j.jam_selesai, j.tempat,
-               CONCAT("PKPPS: ", t.nama_tingkatan) AS tingkatan
+               ' . $tingkatanExpr . ' AS tingkatan
         FROM pkpps_jadwal j
         INNER JOIN kegiatan k ON k.id = j.kegiatan_id
         INNER JOIN pkpps_tingkatan t ON t.id = j.pkpps_tingkatan_id

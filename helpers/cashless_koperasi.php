@@ -589,14 +589,16 @@ function cashless_koperasi_users_ensure_schema(PDO $pdo): void
     } catch (Throwable $e) {
         // Abaikan jika DB belum punya tabel users / ENUM lama berbeda.
     }
+    if (function_exists('column_exists') && column_exists($pdo, 'users', 'koperasi_id')) {
+        return;
+    }
     try {
-        $pdo->exec('ALTER TABLE users ADD COLUMN IF NOT EXISTS koperasi_id TINYINT UNSIGNED NULL DEFAULT NULL');
+        $colType = function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)
+            ? 'INTEGER NULL DEFAULT NULL'
+            : 'TINYINT UNSIGNED NULL DEFAULT NULL';
+        $pdo->exec('ALTER TABLE users ADD COLUMN koperasi_id ' . $colType);
     } catch (Throwable $e) {
-        try {
-            $pdo->exec('ALTER TABLE users ADD COLUMN koperasi_id TINYINT UNSIGNED NULL DEFAULT NULL');
-        } catch (Throwable $e2) {
-            // sudah ada
-        }
+        // sudah ada
     }
 }
 

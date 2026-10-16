@@ -14,6 +14,11 @@ function ensure_presensi_jadwal_column(PDO $pdo): void
 
         return;
     }
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)) {
+        $_SESSION['presensi_jadwal_col_ready_v2'] = 1;
+
+        return;
+    }
     try {
         $pdo->exec('ALTER TABLE presensi ADD COLUMN IF NOT EXISTS jadwal_kegiatan_id INT NULL AFTER kegiatan_id');
         $pdo->exec('ALTER TABLE presensi ADD COLUMN IF NOT EXISTS pkpps_jadwal_id INT UNSIGNED NULL AFTER jadwal_kegiatan_id');
@@ -153,6 +158,20 @@ function presensi_scan_ensure_schema_deferred(PDO $pdo): void
         return;
     }
     if (!table_exists($pdo, 'pembimbing')) {
+        $_SESSION['presensi_scan_schema_ready_v1'] = 1;
+
+        return;
+    }
+    if (function_exists('pondok_db_is_sqlite_family') && pondok_db_is_sqlite_family($pdo)) {
+        if (function_exists('ensure_jadwal_kegiatan_tempat')) {
+            ensure_jadwal_kegiatan_tempat($pdo);
+        }
+        $_SESSION['presensi_scan_schema_ready_v1'] = 1;
+
+        return;
+    }
+    if (table_exists($pdo, 'presensi_pembimbing')) {
+        ensure_jadwal_kegiatan_tempat($pdo);
         $_SESSION['presensi_scan_schema_ready_v1'] = 1;
 
         return;

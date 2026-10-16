@@ -81,6 +81,9 @@ try {
     $pdo = $connected['pdo'];
     $GLOBALS['pondok_pdo'] = $pdo;
     $GLOBALS['pondok_pdo_dsn_config'] = $connected['dsn_config'];
+    if (pondok_db_driver() === 'turso') {
+        $GLOBALS['pondok_env'] = 'local';
+    }
 } catch (Throwable $exception) {
     die('Koneksi database gagal: ' . $exception->getMessage());
 }
