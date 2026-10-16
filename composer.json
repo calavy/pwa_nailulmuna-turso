@@ -1,6 +1,7 @@
 {
     "name": "pondok/pwa-nailulmuna",
     "description": "Portal digital pondok — PHP PWA",
+    "license": "proprietary",
     "type": "project",
     "require": {
         "php": ">=8.2",
