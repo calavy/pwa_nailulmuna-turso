@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364af9eda6
+      - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@2.32.0
         with:
