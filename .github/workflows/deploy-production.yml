@@ -155,4 +155,4 @@ jobs:
         run: |
           echo "Commit: ${{ github.sha }}"
           echo "Mode: ${{ github.event_name == 'push' && 'allowlist (tag)' || github.event.inputs.deploy_mode }}"
-          echo "Docs: docs/PRODUCTION-ENV.md, docs/PWA-PRODUCTION-CHECKLIST.md"
+          echo "Post-deploy server: composer install --no-dev; database.turso.local.php; docs/HOSTING-HTTPS-SETUP.md"

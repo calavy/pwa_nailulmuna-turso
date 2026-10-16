@@ -5,7 +5,7 @@
  * Aktifkan: set env PONDOK_DB_DRIVER=turso
  *
  * Staging lokal: sqlite_path menunjuk ke file .db hasil konversi skema (lihat migrations/turso/).
- * Produksi Turso remote: setelah composer require turso/libsql-php, isi url + auth_token.
+ * Produksi Turso remote: composer install (turso/libsql), kosongkan sqlite_path, isi url + auth_token.
  */
 return [
     /** Path file SQLite untuk staging (relatif ke root proyek atau absolut). */

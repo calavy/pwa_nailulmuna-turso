@@ -24,7 +24,9 @@ Hosting PHP (`pwa.nailulmuna.id`) — **jangan** commit kredensial ke GitHub.
 | `TURSO_DATABASE_URL` | URL database Turso (remote, opsional) |
 | `TURSO_AUTH_TOKEN` | Token API Turso (opsional) |
 
-File: `config/database.turso.local.php` (salin dari `database.turso.example.php`).
+File: `config/database.turso.local.php` (salin dari `database.turso.example.php` staging atau `database.turso.production.example.php` live).
+
+Server produksi: `composer install --no-dev` (paket `turso/libsql`, ekstensi **FFI** wajib).
 
 ## Aplikasi
 

@@ -3,10 +3,11 @@
     "description": "Portal digital pondok — PHP PWA",
     "type": "project",
     "require": {
-        "php": ">=8.2"
-    },
-    "suggest": {
-        "turso/libsql-php": "Koneksi remote Turso (opsional; staging bisa pakai sqlite_path)"
+        "php": ">=8.2",
+        "ext-ffi": "*",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*",
+        "turso/libsql": "^0.2"
     },
     "config": {
         "sort-packages": true

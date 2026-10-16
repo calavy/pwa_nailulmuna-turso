@@ -91,7 +91,7 @@ function pondok_db_connect_turso(array $options): array
     if (!is_file($tursoFile)) {
         throw new RuntimeException(
             'PONDOK_DB_DRIVER=turso but config/database.turso.local.php is missing. '
-            . 'Copy config/database.turso.example.php and configure staging.'
+            . 'Copy config/database.turso.example.php or database.turso.production.example.php.'
         );
     }
     $cfg = require $tursoFile;
@@ -99,33 +99,27 @@ function pondok_db_connect_turso(array $options): array
         throw new RuntimeException('config/database.turso.local.php must return an array.');
     }
 
-    $sqlitePath = trim((string) ($cfg['sqlite_path'] ?? ''));
-    if ($sqlitePath !== '') {
-        if (!str_starts_with($sqlitePath, ':') && !is_file($sqlitePath)) {
-            $dir = dirname($sqlitePath);
-            if ($dir !== '' && $dir !== '.' && !is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-        }
-        $dsn = 'sqlite:' . $sqlitePath;
-        $pdo = new PDO($dsn, null, null, $options);
+    require_once __DIR__ . '/pondok_turso_libsql.php';
+    $pdo = pondok_turso_open_pdo($cfg, $options);
+    $dsn = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? 'sqlite:turso'
+        : 'libsql:remote';
 
-        return [
-            'pdo' => $pdo,
-            'dsn_config' => [
-                'driver' => 'turso',
-                'dsn' => $dsn,
-                'user' => '',
-                'pass' => '',
-                'options' => $options,
+    return [
+        'pdo' => $pdo,
+        'dsn_config' => [
+            'driver' => 'turso',
+            'dsn' => $dsn,
+            'user' => '',
+            'pass' => '',
+            'options' => $options,
+            'turso_cfg' => [
+                'sqlite_path' => (string) ($cfg['sqlite_path'] ?? ''),
+                'url' => trim((string) ($cfg['url'] ?? '')),
+                'sync_local_path' => (string) ($cfg['sync_local_path'] ?? ''),
             ],
-        ];
-    }
-
-    throw new RuntimeException(
-        'Turso staging: set sqlite_path di config/database.turso.local.php '
-        . '(lihat database.turso.example.php). Remote libsql: composer require turso/libsql-php lalu perluas pondok_db_connect_turso().'
-    );
+        ],
+    ];
 }
 
 function pondok_database_name(PDO $pdo): string

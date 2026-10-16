@@ -1,0 +1,25 @@
+name: CI PHP lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364af9eda6
+
+      - uses: shivammathur/setup-php@2.32.0
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: PHP syntax (helpers + config + scripts/turso*)
+        run: |
+          set -e
+          find helpers config scripts -name '*.php' \
+            ! -path '*/vendor/*' \
+            -print0 | xargs -0 -n1 php -l

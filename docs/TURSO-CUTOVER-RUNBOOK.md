@@ -2,7 +2,8 @@
 
 ## Prasyarat
 
-- Staging Turso dengan skema dikonversi (`migrations/turso/`)
+- `composer install` + `turso/libsql` di server produksi
+- Staging Turso dengan skema dikonversi (`migrations/turso/`, termasuk `02_full_schema.sql`)
 - `PONDOK_DB_DRIVER=turso` diuji di staging dengan modul pilot (settings, daftar santri)
 - Inventaris SQL: `php scripts/inventory_mysql_compat.php`
 - Backup penuh MySQL produksi (Export SQL phpMyAdmin)

@@ -1,67 +1,45 @@
-# Manajemen Santri - Fokus Presensi QR
+# PWA Nailul Muna (Turso)
 
-## Setup Wajib
+Portal digital pondok — presensi, keuangan, santri, portal wali. Monolith **PHP 8.2+** + PWA (service worker, offline).
 
-1. Start `Apache` dan `MySQL` di XAMPP.
-2. Pastikan database bernama `santri`.
-3. Jalankan SQL untuk tabel santri minimal:
+- **Repo:** https://github.com/calavy/pwa_nailulmuna-turso  
+- **Produksi (target):** HTTPS + database **Turso** ([DEPLOY-GREENFIELD-TURSO.md](docs/DEPLOY-GREENFIELD-TURSO.md))  
+- **Lokal:** XAMPP + MySQL — [CARA-PAKAI.md](CARA-PAKAI.md)
 
-```sql
-CREATE TABLE IF NOT EXISTS santri (
-  id INT(11) NOT NULL AUTO_INCREMENT,
-  qr VARCHAR(255) DEFAULT NULL,
-  nis VARCHAR(30) NOT NULL,
-  nama_santri VARCHAR(100) NOT NULL,
-  tingkatan VARCHAR(20) DEFAULT NULL,
-  no_wa_wali VARCHAR(30) DEFAULT NULL,
-  is_aktif TINYINT(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (id),
-  UNIQUE KEY uniq_nis (nis)
-);
+## Quick start (lokal MySQL)
+
+1. XAMPP: Apache + MySQL  
+2. Impor [`impor_lokal_pwa_nailulmuna.sql`](impor_lokal_pwa_nailulmuna.sql)  
+3. Salin `config/database.local.example.php` → `config/database.local.php`  
+4. Buka `/login.php` (path mengikuti nama folder di `htdocs`)
+
+## Turso (staging)
+
+```powershell
+cd "C:\xampp\htdocs\pwa_nailulmuna - turso"
+composer install
+php scripts/turso_staging_init.php
+php scripts/turso_apply_migrations.php
+php scripts/turso_seed_minimal.php
+$env:PONDOK_DB_DRIVER="turso"
+php scripts/uat_turso_smoke.php
 ```
 
-4. Import file `schema_presensi.sql` di phpMyAdmin.
-5. Buka `http://localhost/manajement_santri`.
+Skema: [`migrations/turso/`](migrations/turso/) — regenerate DDL: `php scripts/build_turso_schema.php` (review `02_full_schema.sql` sebelum produksi).
 
-## Modul
+## Deploy
 
-- Scan presensi QR (`presensi/scan.php`)
-- Jadwal kegiatan per tingkatan (`jadwal/index.php`)
-- Perizinan + surat izin A5 (`perizinan/index.php`)
-- Scan kembali dari izin (`perizinan/kembali.php`)
-- Rekap presensi masehi/hijriyah (`rekap/index.php`)
-- Settings WA Gateway + kriteria alpa (`settings/index.php`)
-- Admin tambahan (`settings/admin.php`)
-- Upload logo langsung dari komputer (`settings/index.php`)
-- Import data santri massal Excel/CSV (`santri/import.php`)
+- GitHub Actions: [`.github/workflows/deploy-production.yml`](.github/workflows/deploy-production.yml)  
+- Secrets & hosting: [docs/GITHUB-ACTIONS-SECRETS.md](docs/GITHUB-ACTIONS-SECRETS.md), [docs/HOSTING-HTTPS-SETUP.md](docs/HOSTING-HTTPS-SETUP.md)  
+- Env: [docs/PRODUCTION-ENV.md](docs/PRODUCTION-ENV.md)
 
-## Update penting terbaru
+## Dokumen penting
 
-- Tampilan aplikasi dioptimalkan untuk ponsel (`assets/css/app.css`)
-- Menu aplikasi model sidebar kiri (desktop) + offcanvas (mobile)
-- Surat izin A5 memakai layout modern + jam terbit otomatis
-- Surat izin memuat QR return untuk scan saat santri kembali
-- Nama pengasuh di surat otomatis dari settings
-- Scan QR realtime ditingkatkan dengan pilihan kamera + validasi 2x scan agar lebih akurat
+| Topik | File |
+|--------|------|
+| Strategi MySQL vs Turso | [docs/DEPLOYMENT-STRATEGY.md](docs/DEPLOYMENT-STRATEGY.md) |
+| Cutover | [docs/TURSO-CUTOVER-RUNBOOK.md](docs/TURSO-CUTOVER-RUNBOOK.md) |
+| PWA live | [docs/PWA-PRODUCTION-CHECKLIST.md](docs/PWA-PRODUCTION-CHECKLIST.md) |
+| Kompatibilitas SQL | [docs/MYSQL-TURSO-INVENTORY.md](docs/MYSQL-TURSO-INVENTORY.md) |
 
-## Scheduler WA Otomatis
-
-`jam_kirim_wa_auto` akan dieksekusi lebih akurat jika endpoint cron dipanggil berkala:
-
-- File cron: `cron/wa_auto.php`
-- Mode CLI (disarankan):
-  - `php c:\xampp\htdocs\manajement_santri\cron\wa_auto.php`
-- Mode HTTP:
-  - `http://localhost/manajement_santri/cron/wa_auto.php`
-  - Jika setting `wa_auto_cron_key` diisi, tambahkan `?key=ISI_KEY`.
-
-Contoh jadwal:
-- Linux cron: tiap 1 menit.
-- Windows Task Scheduler: jalankan per 1 menit memakai `php.exe` + argumen file di atas.
-
-## Login awal
-
-- Username: `admin`
-- Password: `admin123`
-
-Jika tabel `users` sudah diisi, login akan memakai data user tersebut.
+**Keamanan:** jangan commit `config/database.turso.local.php`, token Turso, atau `storage/*.db`.
