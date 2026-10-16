@@ -4,7 +4,7 @@
  * Lokal (XAMPP): config/database.local.php → pwa_nailulmuna / root / pass kosong.
  * Hosting: config/database.local.hosting.php → salin ke database.local.php di server,
  * atau set env PONDOK_DB_PROFILE=hosting.
- * Turso (staging): env PONDOK_DB_DRIVER=turso + config/database.turso.local.php
+ * Turso: env PONDOK_DB_DRIVER=turso + config/database.turso.local.php (staging) atau TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (remote/CI)
  *
  * Prioritas MySQL: getenv DB_* → database.local.php → default lokal di bawah (tanpa password produksi).
  */

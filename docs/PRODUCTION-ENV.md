@@ -16,17 +16,19 @@ Hosting PHP (`pwa.nailulmuna.id`) — **jangan** commit kredensial ke GitHub.
 
 \* Alternatif: file `config/database.local.php` di server (gitignored).
 
-## Turso (staging / rencana cutover)
+## Turso (staging / cutover / CI)
+
+Database cloud: **`pwanailulmuna`** (region Tokyo). Driver PHP: paket **`turso/libsql`** (libSQL).
 
 | Variabel | Keterangan |
 |----------|------------|
-| `PONDOK_DB_DRIVER` | `turso` untuk libSQL; default `mysql` |
-| `TURSO_DATABASE_URL` | URL database Turso (remote, opsional) |
-| `TURSO_AUTH_TOKEN` | Token API Turso (opsional) |
+| `PONDOK_DB_DRIVER` | `turso` untuk libSQL/SQLite staging atau remote; default `mysql` |
+| `TURSO_DATABASE_URL` | URL libsql remote — prioritas atas `sqlite_path` staging |
+| `TURSO_AUTH_TOKEN` | Token API Turso |
 
-File: `config/database.turso.local.php` (salin dari `database.turso.example.php` staging atau `database.turso.production.example.php` live).
+**Prioritas koneksi:** env `TURSO_*` (CI, produksi) → override file lokal. Staging lokal: `config/database.turso.local.php` dengan `sqlite_path` ke `storage/turso_staging.db` (salin dari `database.turso.example.php`). Produksi remote: `database.turso.production.example.php` — kosongkan `sqlite_path`, isi URL/token via env atau file gitignored.
 
-Server produksi: `composer install --no-dev` (paket `turso/libsql`, ekstensi **FFI** wajib).
+Server produksi / GitHub Actions: PHP **8.3** disarankan; `composer install --no-dev` (paket `turso/libsql`, ekstensi **FFI** + **pdo_sqlite** wajib).
 
 ## Aplikasi
 

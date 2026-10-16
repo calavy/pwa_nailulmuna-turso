@@ -10,7 +10,8 @@
 return [
     'sqlite_path' => '',
 
-    'url' => '', // libsql://your-db-org.turso.io
+    // Kosongkan di file; isi via env TURSO_DATABASE_URL dan TURSO_AUTH_TOKEN (server / GitHub Actions).
+    'url' => '',
     'auth_token' => '',
 
     /** Cache file lokal untuk libsql sync (writable di server). */

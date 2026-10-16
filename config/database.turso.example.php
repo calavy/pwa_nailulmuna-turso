@@ -11,7 +11,7 @@ return [
     /** Path file SQLite untuk staging (relatif ke root proyek atau absolut). */
     'sqlite_path' => dirname(__DIR__) . '/storage/turso_staging.db',
 
-    /** Opsional — koneksi remote (butuh turso/libsql-php). */
+    /** Opsional — remote via env TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (override sqlite_path). */
     'url' => '',
     'auth_token' => '',
     'sync_local_path' => '',

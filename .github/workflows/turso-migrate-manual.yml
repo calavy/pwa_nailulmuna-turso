@@ -1,0 +1,54 @@
+# Migrasi Turso — HANYA manual (workflow_dispatch). Tidak dijalankan on push.
+# Tidak mengimpor MySQL produksi otomatis; tidak fresh_apply remote tanpa persetujuan eksplisit.
+
+name: Turso migrate (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Ketik "migrate-staging" untuk melanjutkan (placeholder — migrasi penuh dari mesin lokal)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require confirmation phrase
+        if: inputs.confirm != 'migrate-staging'
+        run: |
+          echo "Input confirm must be exactly: migrate-staging"
+          exit 1
+
+  migrate_info:
+    needs: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: ffi, pdo_sqlite
+
+      - name: Composer install
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+
+      - name: Remote read-only sanity (no schema/data migration in CI)
+        env:
+          PONDOK_DB_DRIVER: turso
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: php scripts/ci_turso_validate.php
+
+      - name: Migration note
+        run: |
+          echo "MySQL source is not available in GitHub Actions for this repo."
+          echo "Run locally: turso_verify_schema, turso_import dry-run/--apply, turso_apply_migrations."
+          echo "Do NOT run turso_staging_fresh_apply or remote destructive steps until staging validation is approved."
+          echo "See docs/TURSO-CUTOVER-RUNBOOK.md and migrations/turso/README.md"

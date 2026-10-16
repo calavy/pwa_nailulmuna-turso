@@ -32,6 +32,68 @@ function pondok_db_is_sqlite_family(PDO $pdo): bool
     return $driver === 'sqlite';
 }
 
+/** URL + token Turso dari environment (tanpa mencetak nilai). */
+function pondok_turso_env_credentials(): array
+{
+    $url = trim((string) (getenv('TURSO_DATABASE_URL') ?: ''));
+    $token = trim((string) (getenv('TURSO_AUTH_TOKEN') ?: ''));
+
+    return ['url' => $url, 'auth_token' => $token];
+}
+
+function pondok_turso_has_remote_credentials(): bool
+{
+    $c = pondok_turso_env_credentials();
+
+    return $c['url'] !== '' && $c['auth_token'] !== '';
+}
+
+/**
+ * Konfigurasi Turso: file lokal (staging) + override remote via env (CI/produksi).
+ *
+ * @return array{sqlite_path?:string,url?:string,auth_token?:string,sync_local_path?:string}
+ */
+function pondok_turso_config(): array
+{
+    $tursoFile = __DIR__ . '/../config/database.turso.local.php';
+    $cfg = [];
+    if (is_file($tursoFile)) {
+        $loaded = require $tursoFile;
+        if (!is_array($loaded)) {
+            throw new RuntimeException('config/database.turso.local.php must return an array.');
+        }
+        $cfg = $loaded;
+    }
+
+    $env = pondok_turso_env_credentials();
+    if ($env['url'] !== '') {
+        $cfg['url'] = $env['url'];
+    }
+    if ($env['auth_token'] !== '') {
+        $cfg['auth_token'] = $env['auth_token'];
+    }
+
+    if ($env['url'] !== '' && $env['auth_token'] !== '') {
+        $cfg['sqlite_path'] = '';
+    }
+
+    if (($cfg['sync_local_path'] ?? '') === '') {
+        $cfg['sync_local_path'] = dirname(__DIR__) . '/storage/turso_sync_cache.db';
+    }
+
+    $sqlitePath = trim((string) ($cfg['sqlite_path'] ?? ''));
+    $url = trim((string) ($cfg['url'] ?? ''));
+    $token = trim((string) ($cfg['auth_token'] ?? ''));
+
+    if ($sqlitePath === '' && ($url === '' || $token === '')) {
+        throw new RuntimeException(
+            'Turso: set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (remote) or sqlite_path in config/database.turso.local.php (staging).'
+        );
+    }
+
+    return $cfg;
+}
+
 /**
  * @param array<string, mixed> $mysqlConfig
  * @return array{pdo: PDO, dsn_config: array<string, mixed>}
@@ -87,17 +149,7 @@ function pondok_db_connect(array $mysqlConfig): array
  */
 function pondok_db_connect_turso(array $options): array
 {
-    $tursoFile = __DIR__ . '/../config/database.turso.local.php';
-    if (!is_file($tursoFile)) {
-        throw new RuntimeException(
-            'PONDOK_DB_DRIVER=turso but config/database.turso.local.php is missing. '
-            . 'Copy config/database.turso.example.php or database.turso.production.example.php.'
-        );
-    }
-    $cfg = require $tursoFile;
-    if (!is_array($cfg)) {
-        throw new RuntimeException('config/database.turso.local.php must return an array.');
-    }
+    $cfg = pondok_turso_config();
 
     require_once __DIR__ . '/pondok_turso_libsql.php';
     $pdo = pondok_turso_open_pdo($cfg, $options);
